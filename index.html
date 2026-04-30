@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>האפליקציה שלי</title>
+    
+    <!-- קישור למניפסט -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2196f3">
+
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+
+        #install-container {
+            display: none; /* מוסתר כברירת מחדל */
+            text-align: center;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background-color: #1976d2;
+        }
+
+        /* עיצוב שונה לאפליקציה המותקנת */
+        @media (display-mode: standalone) {
+            #install-container { display: none !important; }
+            body { background-color: #e3f2fd; }
+            h1::after { content: " (גרסת אפליקציה)"; font-size: 0.5em; color: #666; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ברוכים הבאים לאתר שלי</h1>
+    <p id="status">זהו אתר רגיל בדפדפן.</p>
+
+    <!-- כפתור התקנה -->
+    <div id="install-container">
+        <p>רוצה חוויה טובה יותר? התקן את האפליקציה!</p>
+        <button id="install-button">התקן עכשיו</button>
+    </div>
+
+    <script>
+        // 1. רישום ה-Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js')
+            .then(() => console.log('Service Worker Registered'));
+        }
+
+        // 2. לוגיקת כפתור ההתקנה
+        let deferredPrompt;
+        const installContainer = document.getElementById('install-container');
+        const installBtn = document.getElementById('install-button');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installContainer.style.display = 'block'; // מציג את הכפתור רק כשאפשר להתקין
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                    installContainer.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
+
+        // 3. זיהוי אם אנחנו כבר באפליקציה
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            document.getElementById('status').innerText = "אתה נמצא בתוך האפליקציה המותקנת!";
+        }
+    </script>
+</body>
+</html>
